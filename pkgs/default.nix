@@ -1151,6 +1151,7 @@ self: {
             cardano-sl-ssc
             cardano-sl-txp
             cardano-sl-update
+            cborg
             cereal
             conduit
             containers
@@ -4984,8 +4985,8 @@ self: {
           version = "0.2.0.0";
           src = fetchgit {
             url = "https://github.com/serokell/time-warp-nt.git";
-            sha256 = "0lyh7ydvlcjrdy9ffdp4dqymwgx7zwhqp61hx3ibq93k4j1s0m2j";
-            rev = "77a5db07bac949cf4ff1797eec44a036513be719";
+            sha256 = "0dwxcg3x62mghaz3zm77lnqdi8c63ny9sxrq4p0kwf51zyr6ip4d";
+            rev = "d6205adccf90af07f60808b507354138a5914a42";
           };
           isLibrary = true;
           isExecutable = true;
