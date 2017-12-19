@@ -100,35 +100,33 @@ snapshot, it does the following:
    blockchain. Suppose this header is from epoch `e`. Note that it's
    important to send more than one hash, because node could be stopped
    before fork happened and may have newest blocks which are not part
-   of the main chain.
-3. The peer sends all blocks from epoch `e` to the node just like it's
-   done for regular synchronization.
-4. Then the peer sends a bunch of tiny blocks starting from one for
+   of the main chain. So the node has all blocks from all epochs
+   before `e`.
+3. Then the peer sends a bunch of tiny blocks starting from one for
+   epoch `e`.
+4. When the node receives a tiny block for epoch `e`, it knows who can
+   create blocks in that epoch. So it can verify that signatures from
+   the tiny block are legitimate and provided by actual slot leaders.
+5. Now the node knows who can create blocks in last `2 · l` slots in
+   epoch `e` (this information is available from tiny block for
+   epoch `e`). It can then verify signatures from tiny block for
    epoch `e + 1`.
-5. When the node receives a tiny block for epoch `e + 1`, it knows who
-   can create blocks in that epoch. So it can verify that signatures
-   from the tiny block are legitimate and provided by actual slot
-   leaders.
-6. Now the node knows who can create blocks in last `2 · l` slots in
-   epoch `e + 1` (this information is available from tiny block for
-   epoch `e + 1`). It can then verify signatures from tiny block for
-   epoch `e + 2`.
-7. Repeat step 6 for all other tiny blocks. Request more tiny blocks
+6. Repeat step 5 for all other tiny blocks. Request more tiny blocks
    after the first bunch is processed. A request may include hash of
    last processed tiny block, for example, or just epoch
    number. Download and process all available tiny blocks.
-8. If current epoch is `x`, last tiny block will be for epoch
+7. If current epoch is `x`, last tiny block will be for epoch
    `x`. Request headers from last `2 · l` slots of
    epoch `x - 1`.
-9. Verify that headers are consecutive and issued by proper
+8. Verify that headers are consecutive and issued by proper
    stakeholders. If that's the case, request the block corresponding
    to the oldest header and take hash of snapshot (`H`) from it.
-10. Download snapshot somehow. The mechanism to download a snapshot is
-    not described in this document. Check it's correctness according
-    to `H`.
-11. Download all blocks after that snapshot and verify them fully
+9. Download snapshot somehow. The mechanism to download a snapshot is
+   not described in this document. Check it's correctness according
+   to `H`.
+10. Download all blocks after that snapshot and verify them fully
     according to the snapshot.
-12. After all recent blocks are processed, the node is fully
+11. After all recent blocks are processed, the node is fully
     functional. It still makes sense to download all other blocks to
     be 100% sure the whole chain is valid.
 
@@ -171,7 +169,33 @@ say `l = 2100`. Then:
 
 ### Properties
 
-#### Correctness
+#### Correctness of the snapshot
+
+The probability of the snapshot being incorrect is the same as the
+probability of a fork in Ouroboros protocol with depth more than
+`l`. If `l` is almost same as `k`, this probability is negligible.
+
+Recall the steps from
+[fast synchronization procedure](#fast-synchronization-procedure). The
+node can easily verify tiny block for `e`, because it knows leaders
+for epoch `e` (it has all blocks before `e`). For tiny block for
+epoch `e + 1` it's only possible to verify that signatures are valid
+and correspond to actual slot leaders, but it's impossible to verify
+list of slot leaders put into that tiny block. However, it's easy to
+see that if signatures are valid, list of leaders should also be valid
+if Common Prefix property with parameter `l` is not violated. In this
+case among last `2 · l` slots of epoch `e` there are at least `l`
+blocks and at least one of them must be produced by an honest
+stakeholder according to Common Prefix property. It implies that at
+least one signature in the tiny block for epoch `e + 1` is produced by
+an honest stakeholder, so the whole list must be correct. Verification
+of subsequent tiny blocks is the same.
+
+If all tiny blocks are correct, headers received at step 8 are
+guaranteed to be created by real slot leaders. According to Common
+Prefix property, at least the oldest block must be created by an
+honest stakeholder, hence it must contain the hash of the correct
+snapshot.
 
 #### Data to download
 
@@ -186,6 +210,7 @@ complex.
 * Aggregate signature
 * Compression
 * Public keys instead of `StakeholderId`s.
+* Put at most `k` signatures.
 
 ### A note about delegation
 
