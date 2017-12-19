@@ -134,6 +134,41 @@ snapshot, it does the following:
 
 #### Choice of `l`
 
+The choice of `l` affects performance requirements and security
+guarantees. There is a certain trade-off.
+
+The biggest reasonable value of `l` is `k` (security parameter of
+Ouroboros protocol). It's the best value from security point of
+view. However, it might be not feasible for real system for
+performance reasons. Specifically, there are two problems:
+1. It's not trivial to compute slot leaders for an epoch, because it
+   requires iterating over whole UTXO or stakes map which might be
+   big. It's not yet clear how much time it will take in practice, but
+   probably not just few seconds. If it takes a minute and `l = k`, first three
+   slots among last `2 · k` will be missed, because their leaders will
+   be computing slot leaders (because it's mandatory to put a
+   signature of this list into new block).
+2. If leaders must be computed before creating a block for `8 · k`-th
+   slot, it's enough to force rollback of only one block to require
+   nodes to recalculate slot leaders. It's not very expensive to make
+   a fork of depth 1 (or 2, 3). However, computing slot leaders is an
+   expensive operation, so we'd like to avoid doing it more than once
+   for epoch.
+
+If we pick `l` slightly smaller than `k`, both problems will be
+resolved with high probability. In Cardano SL `k = 2160`. Suppose we
+say `l = 2100`. Then:
+1. Each node will have 40 minutes to compute list of slot
+   leaders. 20 minutes should be enough for everybody.
+2. Rollback of 60-120 (depending on chain quality) blocks is very
+   unlikely to happen, so almost always it will be enough to compute
+   slot leaders only once.
+3. However, we will assume that there is at least one honest block in
+   2100 blocks, not in 2160. Probably it's not a big problem, because
+   probability of all blocks being invalid decreases exponentially, so
+   there should be significant difference between 2100 and 2160 (in
+   both cases probability is negligible).
+
 ### Properties
 
 #### Correctness
